@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <stdbool.h>
 #include "TAD_Hash.h"
-
 
 // ------------------------------ FUNCOES PRONTAS
 // Função hash
@@ -27,15 +26,6 @@ int hash(const char *str){
     }
     return hash % TABLE_SIZE;
 }
-/*
-        unsigned int hash(const char *str) {
-            unsigned int hash = 0;
-            while (*str) {
-                hash = (hash * 31) + *str++;
-            }
-            return hash % TABLE_SIZE;
-        }
-*/
 
 // Inicializa a tabela hash
 void init_hash_table() {
@@ -89,17 +79,46 @@ void insert_ingredient(const char *ingredient, int doc_id, int qtd) {
   hash_table[index] = new_node;
 }
 
-// Verifica se o ingrediente já está na tabela
-int find_ingredient(const char *ingredient) {
-    unsigned int index = hash(ingredient);
-    Node *current = hash_table[index];
-    while (current) {
-        if (strcmp(current->ingredient, ingredient) == 0) {
-            return 1;  // Ingrediente encontrado
+// Função para buscar um ingrediente e imprimir os documentos ordenados por relevância
+void find_ingredient(const char *ingredient, char file_list[MAX_FILES][MAX_FILE_NAME]) {
+  int i,j;
+  unsigned int index = hash(ingredient);
+  Node *current = hash_table[index];
+  bool found = false;
+
+  // Procurar o ingrediente na tabela hash
+  while (current) {
+    if (strcmp(current->ingredient, ingredient) == 0) {
+      found = true;
+      // Ordenar os documentos pela quantidade e ordem alfabética
+      for (i = 0; i < current->doc_count; i++) {
+        for (j = i + 1; j < current->doc_count; j++) {
+          if (current->doc_qtd[i] < current->doc_qtd[j] || 
+            (current->doc_qtd[i] == current->doc_qtd[j] && strcmp(file_list[current->doc_ids[i] - 1], file_list[current->doc_ids[j] - 1]) > 0)) {
+            // Troca
+            int temp_id = current->doc_ids[i];
+            int temp_qtd = current->doc_qtd[i];
+            current->doc_ids[i] = current->doc_ids[j];
+            current->doc_qtd[i] = current->doc_qtd[j];
+            current->doc_ids[j] = temp_id;
+            current->doc_qtd[j] = temp_qtd;
+          }
         }
-        current = current->next;
+      }
+
+      // Imprimir os resultados
+      printf("Resultados para o ingrediente '%s':\n", ingredient);
+      for (i = 0; i < current->doc_count; i++) {
+          printf("<%d,%s>\n", current->doc_qtd[i], file_list[current->doc_ids[i] - 1]);
+      }
+      break;
     }
-    return 0;  // Ingrediente não encontrado
+    current = current->next;
+  }
+
+  if (!found) {
+      printf("Ingrediente '%s' não encontrado.\n", ingredient);
+  }
 }
 
 // Contabiliza a quantidade de vezes que um ingrediente aparece em um arquivo
@@ -332,7 +351,7 @@ void print_hash_table() {
     for (i = 0; i < TABLE_SIZE; ++i) {
         Node *current = hash_table[i];
         if (current == NULL) {
-            printf("\nTabela[%d]: Vazio", i);
+            printf("\nIndice[%d]: Vazio", i);
         } else {
             printf("\nTabela[%d] <qtde,idDoc>:", i);
             while (current != NULL) {
@@ -346,151 +365,44 @@ void print_hash_table() {
     }
 }
 
-/*
-void process_file(const char *file_name, RegistroData *data) {
-  FILE *file = fopen(file_name, "r");
-  if (file == NULL) {
-    perror("Erro ao abrir o arquivo de receita");
-    return;
-  }
+// Função para imprimir os índices invertidos em ordem alfabética
+void print_inverted_indices() {
+  int i,j;
+    // Crie um array temporário para armazenar todos os ingredientes
+    char *ingredients[TABLE_SIZE * MAX_FILES];
+    int count = 0;
 
-  data->num_registros++;
-  data->registros = realloc(data->registros, data->num_registros * sizeof(Registro));
-  if (data->registros == NULL) {
-    perror("Erro ao realocar memória");
-    fclose(file);
-    return;
-  }
-
-  Registro *reg = &data->registros[data->num_registros - 1];
-  reg->idDoc = data->num_registros; // Atribui um ID ao registro
-  reg->nome_doc = strdup(file_name);
-  reg->ocupado = 1;
-
-  char line[MAX_LINHA];
-  if (fgets(line, sizeof(line), file)) {
-    strncpy(reg->nome_pocao, line, MAX_NOMEPOCAO);
-    reg->nome_pocao[strcspn(reg->nome_pocao, "\n")] = '\0';
-  }
-  if (fgets(line, sizeof(line), file)) {
-    strncpy(reg->ingredientes, line, MAX_INGRED);
-    reg->ingredientes[strcspn(reg->ingredientes, "\n")] = '\0';
-  }
-  if (fgets(line, sizeof(line), file)) {
-    strncpy(reg->passos, line, MAX_PASSOS);
-    reg->passos[strcspn(reg->passos, "\n")] = '\0';
-  }
-
-  fclose(file);
-}
-
-void print_registros(const RegistroData *data) {
-  int i;
-  for (i = 0; i < data->num_registros; i++) {
-    Registro *reg = &data->registros[i];
-    printf("ID: %d\n", reg->idDoc);
-    printf("Documento: %s\n", reg->nome_doc);
-    printf("Nome da Pocao: %s\n", reg->nome_pocao);
-    printf("Ingredientes: %s\n", reg->ingredientes);
-    printf("Passos: %s\n", reg->passos);
-    printf("\n");
-  }
-}
-
-FileData read_file(const char *filename) {
-  int i, j;
-
-  FileData data;
-  data.num_arq = 0;
-  data.file_names = NULL;
-  
-  FILE *file;
-  char line[MAX_FILENAME_LENGTH];
-  
-
-  // Abre o arquivo para leitura
-  file = fopen(filename, "r");
-  if (file == NULL) {
-    perror("Erro ao abrir o arquivo");
-    return data;
-  }
-
-  // Lê a primeira linha e armazena o número
-  if (fgets(line, sizeof(line), file) != NULL) {
-    data.num_arq = atoi(line);
-  }
-
-  // Aloca memória para armazenar os nomes dos arquivos
-  data.file_names = malloc(data.num_arq * sizeof(char *));
-  if (data.file_names == NULL) {
-    perror("Erro ao alocar memória");
-    fclose(file);
-    return data;
-  }
-
-  // Lê as próximas linhas e armazena os nomes dos arquivos
-  for (i = 0; i < data.num_arq; i++) {
-    if (fgets(line, sizeof(line), file) != NULL) {
-      // Remove a nova linha do final da string, se existir
-      line[strcspn(line, "\n")] = '\0';
-      data.file_names[i] = strdup(line);
-      if (data.file_names[i] == NULL) {
-        perror("Erro ao duplicar string");
-        // Liberar memória alocada antes de sair
-        for (j = 0; j < i; j++) {
-            free(data.file_names[j]);
-        }
-        free(data.file_names);
-        fclose(file);
-        data.file_names = NULL;
-        return data;
+    // Percorra a tabela hash e armazene os ingredientes no array
+    for (i = 0; i < TABLE_SIZE; i++) {
+      Node *current = hash_table[i];
+      while (current != NULL) {
+          ingredients[count++] = current->ingredient;
+          current = current->next;
       }
     }
-  }
 
-  // Fecha o arquivo
-  fclose(file);
-
-  return data;
-}
-
-void inicializarTabela(int tab[]){
-  int i;
-  for (i = 0; i < TAM_TABELA; i++){
-    tab[i] = 0;   // 0 nn faz parte do conjunto de elementos (poderia ser -1)
-  }
-}
-
-int funcaoHash(int chave){
-  return chave % TAM_TABELA;
-}
-
-void inserir(int tab[], int valor){
-  int id = funcaoHash(valor);
-  while(tab[id] != 0){  // a posicao que quer inserir ja esta ocupada
-    id = funcaoHash(id +1);
-  }
-  tab[id] = valor;
-}
-
-int busca(int tab[], int chave){
-  int id = funcaoHash(chave);
-  printf("Indice do valor encontrado: %d\n",id);
-  while(tab[id] != 0){
-    if(tab[id] == chave){
-      return tab[id];
-    }else{
-      id = funcaoHash(id +1);
+    // Ordene o array de ingredientes
+    for (i = 0; i < count - 1; i++) {
+        for (j = i + 1; j < count; j++) {
+            if (strcmp(ingredients[i], ingredients[j]) > 0) {
+                char *temp = ingredients[i];
+                ingredients[i] = ingredients[j];
+                ingredients[j] = temp;
+            }
+        }
     }
-  }
-  return 0;
-}
 
-void imprimir(int tab[]){
-  int i;
-  for (i = 0; i < TAM_TABELA; i++){
-    printf("%d = %d\n",i,tab[i]);
-  }
-  
+    // Imprima os ingredientes e suas ocorrências
+    for (i = 0; i < count; i++) {
+      Node *current = hash_table[hash(ingredients[i])];
+      while (current != NULL) {
+        if (strcmp(current->ingredient, ingredients[i]) == 0) {
+          printf("Ingrediente: %s\n", current->ingredient);
+          for (j = 0; j < current->doc_count; j++) {
+              printf("  <Qtd: %d, DocID: %d>\n", current->doc_qtd[j], current->doc_ids[j]);
+          }
+        }
+        current = current->next;
+      }
+    }
 }
-*/
