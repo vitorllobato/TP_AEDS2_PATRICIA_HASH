@@ -58,16 +58,19 @@ void insert_ingredient(const char *ingredient, int doc_id, int qtd) {
   // Verificar se o ingrediente já está na tabela
   while (current) {
       if (strcmp(current->ingredient, ingredient) == 0) {
+          printf("\n\nComparando: '%s' - '%s'",current->ingredient,ingredient);
           // Verifica se o ID do documento já está na lista
           for (i = 0; i < current->doc_count; i++) {
               if (current->doc_ids[i] == doc_id) {
                   current->doc_qtd[i] += qtd;  // Atualiza a quantidade
+                    printf("\nDOC JA EXISTE Atualizado - indice: %u, Ingrediente: %s, DocID: %d, Quantidade: %d\n", index, ingredient, doc_id, current->doc_qtd[i]);
                   return;  // ID do documento já presente
               }
           }
           // Adiciona o novo ID do documento e quantidade
           current->doc_ids[current->doc_count] = doc_id;
           current->doc_qtd[current->doc_count++] = qtd;
+            printf("\nNOVO ID Adicionado - indice: %u, Ingrediente: %s, Novo DocID: %d, Quantidade: %d\n", index, ingredient, doc_id, qtd);
           return;
       }
       current = current->next;
@@ -77,48 +80,57 @@ void insert_ingredient(const char *ingredient, int doc_id, int qtd) {
   Node *new_node = create_node(ingredient, doc_id, qtd);
   new_node->next = hash_table[index];
   hash_table[index] = new_node;
+  //printf("\nDOC NN EXISTIA Adicionado - indice: %u, Ingrediente: %s, Novo DocID: %d, Quantidade: %d\n", index, ingredient, doc_id, qtd);
+}
+
+int compare_relevance(const void *a, const void *b) {
+    Relevance *ra = (Relevance *)a;
+    Relevance *rb = (Relevance *)b;
+
+    // Primeiro, ordena por qtd em ordem decrescente
+    if (rb->qtd != ra->qtd) {
+        return rb->qtd - ra->qtd;
+    }
+
+    // Se a quantidade for igual, ordena por doc_id em ordem crescente
+    return ra->doc_id - rb->doc_id;   
 }
 
 // Função para buscar um ingrediente e imprimir os documentos ordenados por relevância
 void find_ingredient(const char *ingredient, char file_list[MAX_FILES][MAX_FILE_NAME]) {
-  int i,j;
-  unsigned int index = hash(ingredient);
-  Node *current = hash_table[index];
-  bool found = false;
+    //printf("\n\n-------'%s'",ingredient);
+    int i, j;
+    Node *node = hash_table[hash(ingredient)];
+    
+    // Lista para armazenar os resultados
+    Relevance relevances[MAX_DOC_COUNT];
+    int count = 0;
 
-  // Procurar o ingrediente na tabela hash
-  while (current) {
-    if (strcmp(current->ingredient, ingredient) == 0) {
-      found = true;
-      // Ordenar os documentos pela quantidade e ordem alfabética
-      for (i = 0; i < current->doc_count; i++) {
-        for (j = i + 1; j < current->doc_count; j++) {
-          if (current->doc_qtd[i] < current->doc_qtd[j] || 
-            (current->doc_qtd[i] == current->doc_qtd[j] && strcmp(file_list[current->doc_ids[i] - 1], file_list[current->doc_ids[j] - 1]) > 0)) {
-            // Troca
-            int temp_id = current->doc_ids[i];
-            int temp_qtd = current->doc_qtd[i];
-            current->doc_ids[i] = current->doc_ids[j];
-            current->doc_qtd[i] = current->doc_qtd[j];
-            current->doc_ids[j] = temp_id;
-            current->doc_qtd[j] = temp_qtd;
-          }
+    // Percorre a lista encadeada para encontrar o ingrediente
+    while (node != NULL) {
+        if (strcmp(node->ingredient, ingredient) == 0) {
+            for (i = 0; i < node->doc_count; i++) {
+                relevances[count].doc_id = node->doc_ids[i];
+                relevances[count].qtd = node->doc_qtd[i];
+                count++;
+            }
+            break;  // Encontrou o ingrediente, não precisa continuar
         }
-      }
-
-      // Imprimir os resultados
-      printf("Resultados para o ingrediente '%s':\n", ingredient);
-      for (i = 0; i < current->doc_count; i++) {
-          printf("<%d,%s>\n", current->doc_qtd[i], file_list[current->doc_ids[i] - 1]);
-      }
-      break;
+        node = node->next;
     }
-    current = current->next;
-  }
 
-  if (!found) {
-      printf("Ingrediente '%s' não encontrado.\n", ingredient);
-  }
+    if (count > 0) {
+        // Ordena os resultados por doc_qtd em ordem decrescente
+        qsort(relevances, count, sizeof(Relevance), compare_relevance);
+
+        // Imprime os resultados
+        printf("\nIngredientes encontrados:\n");
+        for (i = 0; i < count; i++) {
+            printf("Documento: %d, Quantidade: %d\n", relevances[i].doc_id, relevances[i].qtd);
+        }
+    } else {
+        printf("Ingrediente nao encontrado.\n");
+    }
 }
 
 // Contabiliza a quantidade de vezes que um ingrediente aparece em um arquivo
@@ -181,6 +193,24 @@ void to_uppercase(char *str) {
     }
 }
 
+// Função para remover espaços antes e depois de uma string
+void removeLeadingSpaces(char *str) {
+    char *start = str;
+    
+    // Avança até o primeiro caractere não-espaco
+    while (isspace((unsigned char)*start)) {
+        start++;
+    }
+    
+    // Move o restante da string para o início
+    if (start != str) {
+        char *ptr = str;
+        while (*start) {
+            *ptr++ = *start++;
+        }
+        *ptr = '\0'; // Adiciona o terminador nulo no final da string
+    }
+}
 
 void process_file(const char *filename, int doc_id) {
   int qtd_ing = 0;
@@ -222,17 +252,31 @@ void process_file(const char *filename, int doc_id) {
   
   // Processar a segunda linha
   if (strlen(second_line) > 0) {
-    printf("Linha 2: %s", second_line);
+    //printf("Linha 2: %s", second_line);
     const char delim[] = ";";
     char *token = strtok(second_line, delim);
 
-    to_uppercase(token);
-    
     // Processar tokens da segunda linha
     while (token != NULL) {
       int count = 0;
 
-      printf("Frase: %s\n", token);
+      // Remover ponto final se existir
+      size_t len = strlen(token);
+      if (token[len - 1] == '.') {
+          token[len - 1] = '\0';
+      }
+      
+      to_uppercase(token);
+      
+      removeLeadingSpaces(token);
+
+      //rSpace(token);
+      
+      //rSpace(token);
+
+      printf("\n\n\nCHECAR '%s'\n\n",token);
+
+      //printf("Frase: %s\n", token);
       //token[strcspn(token, " ")] = '\0'; // Remove leading/trailing spaces
                 
       // Contar ocorrências na primeira linha
@@ -249,10 +293,14 @@ void process_file(const char *filename, int doc_id) {
           pos3 += strlen(token);
       }
 
-      printf("\n\n      ---------token contabilizar: %s\n", token);
-      printf("\n      -----------count: %d\n\n", count++);
+      //printf("\n\n      ---------token contabilizar: %s\n", token);
+      //printf("\n      -----------count: %d\n\n", count++);
       
       // Inserir ingrediente com a quantidade contada
+      printf("\n\nINSERIR TOKEN");
+      printf("\n--------%s",token);
+      printf("\n--------%d",doc_id);
+      printf("\n--------%d",count++);
       insert_ingredient(token, doc_id, count++);
 
       token = strtok(NULL, delim);
