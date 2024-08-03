@@ -1,9 +1,7 @@
 #ifndef PATRICIA_H
 #define PATRICIA_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "TAD_Comum.h"
 
 typedef enum{Interno, Externo} TipoNo;  //enumeração, pode ser tipo Interno ou Externo
 typedef struct PatriciaNo {

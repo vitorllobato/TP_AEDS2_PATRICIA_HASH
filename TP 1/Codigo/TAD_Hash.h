@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "TAD_Comum.h"
 
 // Definindo o tamanho da tabela hash
 #define TABLE_SIZE 47             // tamanho maximo da tabela
