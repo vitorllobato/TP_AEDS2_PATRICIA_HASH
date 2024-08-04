@@ -1,63 +1,111 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "TAD_Hash.h"
-#include "TAD_Patricia.h"
+#include "Patricia.h"
 
-int main(){
-  int i;
-    char file_list[100][MAX_FILE_NAME];
-    int num_files = 0;
+#define MAX_INGREDIENTE_LENGTH 256
 
-    // Inicializa a tabela hash
-    init_hash_table();
+int main() {
+    PatriciaNo *arvore = initPatricia();
+    int opcao;
+    char ingrediente[MAX_INGREDIENTE_LENGTH];
+    char nome_arq[MAX_INGREDIENTE_LENGTH];
+    int doc_id;
+    int qtd_palavras;
 
-    // Lê a lista de arquivos
-    read_file_list("./ArquivosEntrada/Arquivos/entrada.txt", file_list, &num_files);
+    do {
+        printf("\nMENU:\n");
+        printf("1. Inserir ingrediente em um documento\n");
+        printf("2. Buscar ingrediente na árvore Patricia\n");
+        printf("3. Exibir todos os ingredientes\n");
+        printf("4. Transformar ingrediente para maiúsculas\n");
+        printf("5. Remover espaços adicionais\n");
+        printf("6. Contabilizar e inserir ingredientes de um arquivo\n");
+        printf("7. Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+        getchar();  // Limpa o buffer do teclado
 
-    // Processa cada arquivo
-    for (i = 0; i < num_files; i++) {
-        char file_path[MAX_FILE_NAME];
-        sprintf(file_path, "./ArquivosEntrada/Arquivos/ArquivosEntrada/%s", file_list[i]);
-        process_file(file_path, i);
-    }
+        switch (opcao) {
+            case 1:
+                printf("Digite o ingrediente: ");
+                fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
+                ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
 
-    // Imprime a tabela hash (opcional)
-    print_hash_table();
+                printf("Digite o ID do documento: ");
+                scanf("%d", &doc_id);
+                getchar();
 
+                arvore = insertPatricia(arvore, ingrediente, doc_id);
+                printf("Ingrediente inserido.\n");
+                break;
 
+            case 2:
+                printf("Digite o ingrediente para buscar: ");
+                fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
+                ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
+
+                PatriciaNo *resultado = searchPatricia(arvore, ingrediente);
+                if (resultado) {
+                    printf("Ingrediente encontrado: %s\n", resultado->no.externo.ingrediente);
+                    for (int i = 0; i < resultado->no.externo.doc_count; i++) {
+                        printf("  <DocID: %d>\n", resultado->no.externo.doc_ids[i]);
+                    }
+                } else {
+                    printf("Ingrediente não encontrado.\n");
+                }
+                break;
+
+            case 3:
+                printf("Todos os ingredientes na árvore Patricia:\n");
+                printPatricia(arvore);
+                break;
+
+            case 4:
+                printf("Digite a string para transformar em maiúsculas: ");
+                fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
+                ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
+
+                transformaMaiuscula(ingrediente);
+                printf("String transformada: %s\n", ingrediente);
+                break;
+
+            case 5:
+                printf("Digite a string para remover espaços adicionais: ");
+                fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
+                ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
+
+                removeEspacoAdicional(ingrediente);
+                printf("String com espaços removidos: %s\n", ingrediente);
+                break;
+
+            case 6:
+                printf("Digite o nome do arquivo de receita: ");
+                fgets(nome_arq, MAX_INGREDIENTE_LENGTH, stdin);
+                nome_arq[strcspn(nome_arq, "\n")] = '\0';  // Remove o \n
+
+                printf("Digite o ingrediente a contabilizar: ");
+                fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
+                ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
+
+                printf("Digite o ID do documento: ");
+                scanf("%d", &doc_id);
+                getchar();
+
+                qtd_palavras = contabilizaIngredientePatricia(&arvore, nome_arq, ingrediente, doc_id);
+                printf("Ingrediente '%s' apareceu %d vezes no arquivo %s e foi inserido na árvore.\n", ingrediente, qtd_palavras, nome_arq);
+                break;
+
+            case 7:
+                printf("Saindo...\n");
+                break;
+
+            default:
+                printf("Opção inválida. Tente novamente.\n");
+        }
+    } while (opcao != 7);
+
+    freePatricia(arvore);
     return 0;
-
-  /*
-  int i;
-  char file_path[256];
-  FileData data = read_file("./ArquivosEntrada/Arquivos/entrada.txt");
-
-  RegistroData registros;
-  registros.num_registros = 0;
-  registros.registros = NULL;
-
-  if (data.file_names != NULL) {
-    printf("Numero de arquivos: %d\n", data.num_arq);
-    for (i = 0; i < data.num_arq; i++) {
-      sprintf(file_path, "./ArquivosEntrada/Arquivos/ArquivosEntrada/arquivo%d.txt", i+1);
-      printf("Arquivo %d: %s\n", i + 1, data.file_names[i]);
-      process_file(file_path, &registros);
-      free(data.file_names[i]); // Libera a memória de cada string
-    }
-    free(data.file_names); // Libera a memória do array de strings
-  }
-
-  print_registros(&registros);
-
-  // Libera a memória alocada para os registros
-  for (i = 0; i < registros.num_registros; i++) {
-    free(registros.registros[i].nome_doc);
-  }
-  free(registros.registros);
-
-
-  printf("Digite um ingrediente para busca: ");
-  return 0;*/
 }
 
