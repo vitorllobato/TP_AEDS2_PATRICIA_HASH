@@ -50,5 +50,6 @@ int comparaRelevanciaPatricia(const void *n1, const void *n2);
 int contabilizaIngredientePatricia(PatriciaNo **root, const char *nome_arq, const char *ingrediente, int doc_id);
 void transformaMaiuscula(char *str);
 void removeEspacoAdicional(char *str);
+void printIndiceInvertido(PatriciaNo *root);
 
 #endif

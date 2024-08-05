@@ -211,6 +211,7 @@ void processaArquivosPatricia(PatriciaNo *root, const char *nome_arq, int doc_id
       
       // Inserir ingrediente com a quantidade contada
         insertPatricia(root, ingred_separado, doc_id);
+        contabilizaIngredientePatricia(root, nome_arq, ingred_separado , doc_id);
       ingred_separado = strtok(NULL, delim);    // Continua para o próximo ingrediente
     }
   }else{
