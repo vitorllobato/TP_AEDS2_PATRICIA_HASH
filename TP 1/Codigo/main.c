@@ -8,45 +8,67 @@ Vitor Vaconcelos Lobato*/
 
 #define MAX_INGREDIENTE_LENGTH 256
 int main() {
-    GeraPesosHash(p);
-    inicializaHash();
-    PatriciaNo *arvore = initPatricia();
-    int opcao;
+    int i;
+    char opcao;
+    char busca_ing[MAX_INGREDIENT_LENGTH];
     char lista_arq[MAX_FILES][MAX_FILE_NAME];
     char caminho_arq[MAX_FILE_NAME];
     int num_files = 0;
+
+    GeraPesosHash(p);
+    inicializaHash();
+
+    PatriciaNo *arvore = initPatricia();
     
     do {
-        printf("\nMENU:\n");
-        printf("1. Receber arquivo de entrada\n");
-        printf("2. Construir índices invertidos\n");
-        printf("3. Imprimir índices invertidos\n");
-        printf("4. Realizar busca por termo(s) de busca\n");
-        printf("5. Sair\n");
-        printf("Escolha uma opção: ");
-        scanf("%d", &opcao);
+        printf("\n\nMENU\n");
+        printf("a) Receber o arquivo de entrada com as receitas \n");
+        printf("b) Construir os indices invertidos \n");
+        printf("c) Imprimir os indices invertidos, em ordem alfabetica (com as listas de ocorrencias) \n");
+        printf("d) HASH -  Realizar buscas por um ou mais termos (arquivos ordenados por relevancia) \n");
+        printf("e) PATRICIA - Realizar buscas por um ou mais termos (arquivos ordenados por relevancia) \n");
+        printf("f) Sair \n");
+        scanf("%c", &opcao);
         getchar();  // Limpa o buffer do teclado
         switch (opcao) {
-            case 1:
-                leArquivoEntradaHash("entrada.txt", lista_arq, &num_files);
-                printf("Arquivo de entrada recebido.\n");
+            case 'a':
+                leArquivoEntradaHash("./ArquivosEntrada/entrada.txt", lista_arq, &num_files);
                 break;
-            case 2:
-                for (int i = 0; i < num_files; i++) {
-                    sprintf(caminho_arq, "./ArquivosTrabalhoPraticoAEDSIIv2/%s", lista_arq[i]);
-                    processaArquivosHash(lista_arq[i], i);
-                    processaArquivosPatricia(arvore, caminho_arq, i);
-                    contabilizaIngredientePatricia(&arvore, caminho_arq, "a", i);
+            case 'b':
+                for (i = 0; i < num_files; i++) {
+                    sprintf(caminho_arq, "./ArquivosEntrada/Arquivos/%s", lista_arq[i]);
+                    processaArquivosHash(caminho_arq, i+1);
+                    //processaArquivosPatricia(arvore, caminho_arq, i);
+                    //contabilizaIngredientePatricia(&arvore, caminho_arq, "a", i);
                 }
-                printf("Índices invertidos construídos.\n");
                 break;
-            case 3:
+            case 'c':
                 // Implementar a impressão dos índices invertidos, contendo as palavras em ordem alfabética, uma por linha, com suas respectivas listas de ocorrências
                 // Exemplo:
-                // imprimirIndicesInvertidos(arvore, tabelaHash);
-                printf("Índices invertidos impressos.\n");
+                //imprimirIndicesInvertidos(arvore, tabelaHash);
+                printf("\n\n\nTABELA HASH IMPRESSA - INDICE INVERTIDO\n");
+                imprimeIndiceInvertidoHash();
                 break;
-            case 4:
+            case 'd':
+                do{
+                    fflush(stdin);
+                    printf("\nDigite '0' para sair da busca e voltar para o menu");
+                    printf("\nEscreva o nome do ingrediente que quer buscar: ");
+                    fgets(busca_ing, sizeof(busca_ing), stdin);
+
+                    // Remove o caractere de nova linha, se presente
+                    size_t len = strlen(busca_ing);
+                    if (len > 0 && busca_ing[len - 1] == '\n') {
+                    busca_ing[len - 1] = '\0';
+                    }
+
+                    // Converter a busca para caixa alta
+                    transformarMaiusculaComum(busca_ing);
+                    buscaHash(busca_ing);
+
+                } while (strcmp(busca_ing, "0") != 0);
+
+            /*
                 printf("Digite o(s) termo(s) de busca: ");
                 //fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
                 //ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
@@ -54,14 +76,34 @@ int main() {
                 // Exemplo:
                 // buscarTermo(arvore, tabelaHash, ingrediente);
                 printf("Busca realizada.\n");
+            */
                 break;
-            case 5:
+            case 'e':       // MUDAR PARA PATRICIA
+                do{
+                    fflush(stdin);
+                    printf("\nDigite '0' para sair da busca e voltar para o menu");
+                    printf("\nEscreva o nome do ingrediente que quer buscar: ");
+                    fgets(busca_ing, sizeof(busca_ing), stdin);
+
+                    // Remove o caractere de nova linha, se presente
+                    size_t len = strlen(busca_ing);
+                    if (len > 0 && busca_ing[len - 1] == '\n') {
+                    busca_ing[len - 1] = '\0';
+                    }
+
+                    // Converter a busca para caixa alta
+                    transformarMaiusculaComum(busca_ing);
+                    buscaHash(busca_ing);
+
+                } while (strcmp(busca_ing, "0") != 0);
+                break;
+            case 'f':       
                 printf("Saindo...\n");
                 break;
             default:
-                printf("Opção inválida. Tente novamente.\n");
+                printf("Opcao invalida. Tente novamente.\n");
         }
-    } while (opcao != 5);
+    } while (opcao != 'f');
     // Liberar memória alocada pela árvore Patricia e pela tabela Hash
     freePatricia(arvore);
     //freeHash(tabelaHash);

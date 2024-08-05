@@ -49,6 +49,7 @@ int primeiroBitDiferente(const char *a, const char *b) {
 
 // Função para inserir um ingrediente na árvore Patricia
 PatriciaNo* insertPatricia(PatriciaNo *root, const char *ingrediente, int doc_id) {
+    int i;
     if (!root) {
         return criaNoExterno(ingrediente, doc_id);
     }
@@ -69,7 +70,7 @@ PatriciaNo* insertPatricia(PatriciaNo *root, const char *ingrediente, int doc_id
 
         // Verifica se o doc_id já está presente
         int found = 0;
-        for (int i = 0; i < doc_count; i++) {
+        for (i = 0; i < doc_count; i++) {
             if (doc_ids[i] == doc_id) {
                 found = 1;
                 break;
@@ -136,11 +137,12 @@ PatriciaNo* searchPatricia(PatriciaNo *root, const char *ingrediente) {
 
 // Função para imprimir a árvore Patricia
 void printPatricia(PatriciaNo *root) {
+    int i;
     if (!root) return;
 
     if (root->tipo == Externo) {
         printf("Ingrediente: %s\n", root->no.externo.ingrediente);
-        for (int i = 0; i < root->no.externo.doc_count; i++) {
+        for (i = 0; i < root->no.externo.doc_count; i++) {
             printf("  <DocID: %d>\n", root->no.externo.doc_ids[i]);
         }
     } else {
@@ -180,6 +182,7 @@ int comparaRelevanciaPatricia(const void *n1, const void *n2) {
 // Função para contabilizar ingredientes em um arquivo e atualizar a Patricia
 int contabilizaIngredientePatricia(PatriciaNo **root, const char *nome_arq, const char *ingrediente, int doc_id) {
     int qtd_palavras = 0;   // Contador para a quantidade de vezes que o ingrediente é encontrado
+    int i,j;
     FILE *arq = fopen(nome_arq, "r");
     if (!arq) {
         perror("Erro ao abrir arquivo de receita");
@@ -212,9 +215,9 @@ int contabilizaIngredientePatricia(PatriciaNo **root, const char *nome_arq, cons
 
         // Verifica se a linha contém as palavras do ingrediente
         int match = 1;
-        for (int i = 0; i < qtd_palavs_ingred; i++) {
+        for (i = 0; i < qtd_palavs_ingred; i++) {
             int word_found = 0;
-            for (int j = 0; j < cont_palav; j++) {
+            for (j = 0; j < cont_palav; j++) {
                 if (strcasecmp(palavs_ingred[i], palavras[j]) == 0) {
                     word_found = 1;
                     break;
@@ -239,7 +242,8 @@ int contabilizaIngredientePatricia(PatriciaNo **root, const char *nome_arq, cons
 
 // Função para converter uma string em maiúsculas
 void transformaMaiuscula(char *str) {
-    for (int i = 0; str[i]; i++) {
+    int i;
+    for (i = 0; str[i]; i++) {
         str[i] = toupper((unsigned char)str[i]);
     }
 }
