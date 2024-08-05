@@ -1,3 +1,7 @@
+/*Arthur Teodoro Borges
+Paula Rios Moreira
+Vitor Vaconcelos Lobato*/
+
 #ifndef PATRICIA_H
 #define PATRICIA_H
 

@@ -1,3 +1,7 @@
+/*Arthur Teodoro Borges
+Paula Rios Moreira
+Vitor Vaconcelos Lobato*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

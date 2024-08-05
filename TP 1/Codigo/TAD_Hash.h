@@ -1,7 +1,16 @@
+/*Arthur Teodoro Borges
+Paula Rios Moreira
+Vitor Vaconcelos Lobato*/
+
+#ifndef TAD_HASH_H
+#define TAD_HASH_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "TAD_Comum.h"
+
 
 // Definindo o tamanho da tabela hash
 #define TABLE_SIZE 47             // tamanho maximo da tabela
@@ -35,12 +44,8 @@ int funcaoHash(const char *str);
 void inicializaHash();
 Node* criarNoHash(const char *ingrediente, int doc_id, int qtd);
 void insereHash(const char *ingrediente, int doc_id, int qtd);
-int comparaRelevanciaHash(const void *a, const void *b);
 void buscaHash(const char *ingrediente);
-int contabilizaIngredienteHash(const char *filename, const char *ingrediente);
-void transformarMaiuscula(char *str);
-void removeEspacoAdicional(char *str);
-void processaArquivosHash(const char *filename, int doc_id);
-void leArquivoEntradaHash(const char *filename, char file_list[][MAX_FILE_NAME], int *num_files);
 void imprimeHash();
 void imprimeIndiceInvertidoHash();
+
+#endif
