@@ -7,6 +7,7 @@ Vitor Vaconcelos Lobato*/
 #include "TAD_Comum.h"
 
 #define MAX_INGREDIENTE_LENGTH 256
+
 int main() {
     int i;
     char opcao;

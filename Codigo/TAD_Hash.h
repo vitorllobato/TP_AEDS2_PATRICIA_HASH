@@ -9,7 +9,7 @@ Vitor Vaconcelos Lobato*/
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-//#include "TAD_Comum.h"
+#include "TAD_Comum.h"
 
 
 // Definindo o tamanho da tabela hash
