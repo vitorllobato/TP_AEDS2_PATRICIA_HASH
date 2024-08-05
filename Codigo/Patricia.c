@@ -276,4 +276,18 @@ void removeEspacoAdicional(char *str) {
     *dest = '\0';
 }
 
+void printIndiceInvertido(PatriciaNo *root) {
+    if (!root) return;
 
+    if (root->tipo == Externo) {
+        printf(" %s ", root->no.externo.ingrediente);
+        for (int i = 0; i < root->no.externo.doc_count; i++) {
+            int doc_id = root->no.externo.doc_ids[i];
+            printf(" | < %d, %d >", 1, doc_id); // Assumindo uma ocorrência por documento
+        }
+        printf("\n");
+    } else {
+        printIndiceInvertido(root->no.interno.left);
+        printIndiceInvertido(root->no.interno.right);
+    }
+}

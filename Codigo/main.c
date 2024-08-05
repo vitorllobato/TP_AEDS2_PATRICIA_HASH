@@ -5,6 +5,9 @@ Vitor Vaconcelos Lobato*/
 #include "Patricia.h"
 #include "TAD_Hash.h"
 #include "TAD_Comum.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define MAX_INGREDIENTE_LENGTH 256
 
@@ -39,16 +42,16 @@ int main() {
                 for (i = 0; i < num_files; i++) {
                     sprintf(caminho_arq, "./ArquivosEntrada/Arquivos/%s", lista_arq[i]);
                     processaArquivosHash(caminho_arq, i+1);
-                    //processaArquivosPatricia(arvore, caminho_arq, i);
-                    //contabilizaIngredientePatricia(&arvore, caminho_arq, "a", i);
+                    processaArquivosPatricia(arvore, caminho_arq, i+1);
+
                 }
                 break;
             case 'c':
-                // Implementar a impressão dos índices invertidos, contendo as palavras em ordem alfabética, uma por linha, com suas respectivas listas de ocorrências
-                // Exemplo:
-                //imprimirIndicesInvertidos(arvore, tabelaHash);
                 printf("\n\n\nTABELA HASH IMPRESSA - INDICE INVERTIDO\n");
                 imprimeIndiceInvertidoHash();
+
+                printf("\n\n\nARVORE PATRICIA IMPRESSA - INDICE INVERTIDO\n");
+                printIndiceInvertido(arvore);
                 break;
             case 'd':
                 do{
@@ -69,17 +72,8 @@ int main() {
 
                 } while (strcmp(busca_ing, "0") != 0);
 
-            /*
-                printf("Digite o(s) termo(s) de busca: ");
-                //fgets(ingrediente, MAX_INGREDIENTE_LENGTH, stdin);
-                //ingrediente[strcspn(ingrediente, "\n")] = '\0';  // Remove o \n
-                // Implementar a busca por termo(s) de busca nos índices construídos
-                // Exemplo:
-                // buscarTermo(arvore, tabelaHash, ingrediente);
-                printf("Busca realizada.\n");
-            */
                 break;
-            case 'e':       // MUDAR PARA PATRICIA
+            case 'e':       
                 do{
                     fflush(stdin);
                     printf("\nDigite '0' para sair da busca e voltar para o menu");
@@ -94,7 +88,7 @@ int main() {
 
                     // Converter a busca para caixa alta
                     transformarMaiusculaComum(busca_ing);
-                    buscaHash(busca_ing);
+                    PatriciaNo *resultado = searchPatricia(arvore, busca_ing);
 
                 } while (strcmp(busca_ing, "0") != 0);
                 break;
