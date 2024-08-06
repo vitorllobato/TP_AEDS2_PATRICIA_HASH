@@ -13,7 +13,8 @@ PatriciaNo* initPatricia() {
     return NULL;
 }
 
-// Função auxiliar para criar um nó externo
+
+// Função para criar um nó externo
 PatriciaNo* criaNoExterno(const char *ingrediente, int doc_id) {
     PatriciaNo *no = (PatriciaNo *)malloc(sizeof(PatriciaNo));
     no->tipo = Externo;
@@ -25,7 +26,7 @@ PatriciaNo* criaNoExterno(const char *ingrediente, int doc_id) {
     return no;
 }
 
-// Função auxiliar para criar um nó interno
+// Função para criar um nó interno
 PatriciaNo* criaNoInterno(int index, PatriciaNo *left, PatriciaNo *right) {
     PatriciaNo *no = (PatriciaNo *)malloc(sizeof(PatriciaNo));
     no->tipo = Interno;
@@ -35,89 +36,80 @@ PatriciaNo* criaNoInterno(int index, PatriciaNo *left, PatriciaNo *right) {
     return no;
 }
 
-// Função auxiliar para verificar o bit de um char em uma posição específica
+// Função para encontrar o primeiro bit diferente entre duas strings
+int primeiroBitDiferente(const char *a, const char *b) {
+    int i = 0;
+    while (a[i] == b[i]) {
+        i++;
+    }
+    return i * 8 + bitPos(a[i] ^ b[i], 0);
+}
+
+// Função para encontrar a posição do bit
 int bitPos(char c, int pos) {
     return (c >> pos) & 1;
 }
 
-// Função auxiliar para buscar o primeiro bit diferente entre duas strings
-int primeiroBitDiferente(const char *a, const char *b) {
-    int i;
-    for (i = 0; a[i] == b[i] && a[i] != '\0'; i++);
-    return i * 8 + bitPos(a[i], 0) != bitPos(b[i], 0);
-}
-
-// Função para inserir um ingrediente na árvore Patricia
+// Função de inserção na árvore Patricia
 PatriciaNo* insertPatricia(PatriciaNo *root, const char *ingrediente, int doc_id) {
-    int i;
-    if (!root) {
+    // Caso a árvore esteja vazia
+    if (root == NULL) {
         return criaNoExterno(ingrediente, doc_id);
     }
 
     PatriciaNo *atual = root;
     PatriciaNo *pai = NULL;
-    int index = 0;
-
     while (atual->tipo == Interno) {
         pai = atual;
-        index = atual->no.interno.index;
-        atual = bitPos(ingrediente[index / 8], 7 - (index % 8)) ? atual->no.interno.right : atual->no.interno.left;
+        if (bitPos(ingrediente[atual->no.interno.index / 8], 7 - (atual->no.interno.index % 8))) {
+            atual = atual->no.interno.right;
+        } else {
+            atual = atual->no.interno.left;
+        }
     }
 
-    if (strcmp(atual->no.externo.ingrediente, ingrediente) == 0) {
-        int *doc_ids = atual->no.externo.doc_ids;
-        int doc_count = atual->no.externo.doc_count;
-
-        // Verifica se o doc_id já está presente
-        int found = 0;
-        for (i = 0; i < doc_count; i++) {
-            if (doc_ids[i] == doc_id) {
-                found = 1;
-                break;
+    // Verifica se o ingrediente já existe
+    if (strcasecmp(atual->no.externo.ingrediente, ingrediente) == 0) {
+        for (int i = 0; i < atual->no.externo.doc_count; i++) {
+            if (atual->no.externo.doc_ids[i] == doc_id) {
+                return root;  // Documento já registrado para este ingrediente
             }
         }
-
-        // Adiciona doc_id se não estiver presente
-        if (!found) {
-            if (atual->no.externo.doc_count == atual->no.externo.doc_size) {
-                atual->no.externo.doc_size *= 2;
-                atual->no.externo.doc_ids = (int *)realloc(atual->no.externo.doc_ids, atual->no.externo.doc_size * sizeof(int));
-            }
-            atual->no.externo.doc_ids[atual->no.externo.doc_count++] = doc_id;
+        // Adiciona o novo doc_id
+        if (atual->no.externo.doc_count == atual->no.externo.doc_size) {
+            atual->no.externo.doc_size *= 2;
+            atual->no.externo.doc_ids = realloc(atual->no.externo.doc_ids, atual->no.externo.doc_size * sizeof(int));
         }
+        atual->no.externo.doc_ids[atual->no.externo.doc_count++] = doc_id;
         return root;
     }
 
-    int diff_bit = primeiroBitDiferente(atual->no.externo.ingrediente, ingrediente);
+    // Encontra o primeiro bit diferente
+    int index = primeiroBitDiferente(atual->no.externo.ingrediente, ingrediente);
+    PatriciaNo *novo_externo = criaNoExterno(ingrediente, doc_id);
 
-    atual = root;
-    PatriciaNo *novo = criaNoExterno(ingrediente, doc_id);
-    PatriciaNo *novoInterno = criaNoInterno(diff_bit, NULL, NULL);
-
-    while (atual->tipo == Interno && atual->no.interno.index < diff_bit) {
-        pai = atual;
-        index = atual->no.interno.index;
-        atual = bitPos(ingrediente[index / 8], 7 - (index % 8)) ? atual->no.interno.right : atual->no.interno.left;
+    // Cria o novo nó interno
+    PatriciaNo *novo_interno;
+    if (bitPos(ingrediente[index / 8], 7 - (index % 8))) {
+        novo_interno = criaNoInterno(index, atual, novo_externo);
+    } else {
+        novo_interno = criaNoInterno(index, novo_externo, atual);
     }
 
-    if (bitPos(ingrediente[diff_bit / 8], 7 - (diff_bit % 8))) {
-        novoInterno->no.interno.left = atual;
-        novoInterno->no.interno.right = novo;
+    // Conecta o novo nó interno ao pai
+    if (pai == NULL) {
+        return novo_interno;  // Novo nó interno é a nova raiz
     } else {
-        novoInterno->no.interno.left = novo;
-        novoInterno->no.interno.right = atual;
-    }
-
-    if (!pai) {
-        return novoInterno;
-    } else if (bitPos(ingrediente[index / 8], 7 - (index % 8))) {
-        pai->no.interno.right = novoInterno;
-    } else {
-        pai->no.interno.left = novoInterno;
+        if (bitPos(ingrediente[pai->no.interno.index / 8], 7 - (pai->no.interno.index % 8))) {
+            pai->no.interno.right = novo_interno;
+        } else {
+            pai->no.interno.left = novo_interno;
+        }
     }
 
     return root;
 }
+
 
 // Função para buscar um ingrediente na árvore Patricia
 PatriciaNo* searchPatricia(PatriciaNo *root, const char *ingrediente) {
